@@ -1,6 +1,6 @@
 [
-  { "name": "Anthony", "age": 420 },
-  { "name": "John", "age": 69 },
-  { "name": "Doe", "age": 420 },
-  { "name": "Jane", "age": 69 }
+  { "name": "Anthony", "age": 4 },
+  { "name": "John", "age": 6 },
+  { "name": "Doe", "age": 2 },
+  { "name": "Jane", "age": 9 }
 ]
