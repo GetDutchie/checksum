@@ -48,6 +48,7 @@ jobs:
         run: |
           binary_name="checksum"
           dirname="$binary_name-${{ env.VERSION }}-${{ matrix.target }}"
+          ls -al
           mkdir "$dirname"
           # if [ "${{ matrix.os }}" = "windows-latest" ]; then
           #   mv "target/${{ matrix.target }}/release/$binary_name.exe" "$dirname"
