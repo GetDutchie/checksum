@@ -1,2 +1,2 @@
 # checksum
-Utility for generating checksum for various file types
+A simple binary that computes checksums for JSON files regardless of key ordering.
