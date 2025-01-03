@@ -50,6 +50,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
+          name: checksum-${{ matrix.target }}
           path: target/${{ matrix.target }}/release/checksum
       - name: Build archive
         shell: bash
