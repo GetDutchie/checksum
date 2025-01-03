@@ -1,4 +1,4 @@
-use checksum_util::digest::compute_digest;
+use checksum::digest::compute_digest;
 use clap::Parser;
 use std::path::PathBuf;
 
