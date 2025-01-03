@@ -30,7 +30,7 @@ jobs:
         with:
           toolchain: stable
           target: ${{ matrix.target }}
-      - run: cargo test
+      - run: cargo test --target ${{ matrix.target }}
       - name: Build the project
         run: cargo build --release --target ${{ matrix.target }}
       - name: Build archive
