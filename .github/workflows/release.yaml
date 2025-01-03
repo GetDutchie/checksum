@@ -40,7 +40,6 @@ jobs:
           binary_name="checksum"
           dirname="$binary_name-${{ env.VERSION }}-${{ matrix.target }}"
           mkdir "$dirname"
-          # TODO: Resolve issues with windows builds failing
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
             mv "target/${{ matrix.target }}/release/$binary_name.exe" "$dirname"
             7z a "$dirname.zip" "$dirname"
