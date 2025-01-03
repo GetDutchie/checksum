@@ -9,7 +9,6 @@ jobs:
   build-and-release:
     name: Build and upload
     runs-on: ${{ matrix.os }}
-    needs: test
     strategy:
       matrix:
         include:
