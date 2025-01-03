@@ -11,7 +11,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - run: cargo test
-  build-and-upload:
+
+  build-and-release:
     name: Build and upload
     runs-on: ${{ matrix.os }}
     needs: test
@@ -46,47 +47,28 @@ jobs:
           use-cross: true
           command: build
           args: --verbose --release --target ${{ matrix.target }}
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: target/${{ matrix.target }}/release/checksum
       - name: Build archive
         shell: bash
+        if: startsWith(github.ref, 'refs/tags/')
         run: |
           binary_name="checksum"
           dirname="$binary_name-${{ env.VERSION }}-${{ matrix.target }}"
-          ls -al
           mkdir "$dirname"
-          ls $dirname
-          # if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          #   mv "target/${{ matrix.target }}/release/$binary_name.exe" "$dirname"
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            mv "target/${{ matrix.target }}/release/$binary_name.exe" "$dirname"
           mv "target/${{ matrix.target }}/release/$binary_name" "$dirname"
-          # if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          #   7z a "$dirname.zip" "$dirname"
-          #   echo "ASSET=$dirname.zip" >> $GITHUB_ENV
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            7z a "$dirname.zip" "$dirname"
+            echo "ASSET=$dirname.zip" >> $GITHUB_ENV
           tar -czf "$dirname.tar.gz" "$dirname"
           echo "ASSET=$dirname.tar.gz" >> $GITHUB_ENV
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
             ${{ env.ASSET }}
-
-      - name: Build the project
-        run: cargo build --release
-
-      - name: Create GitHub Release
-        if: ${{ matrix.os == 'ubuntu-latest' }} # Only create release on the first run
-        uses: ncipollo/release-action@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag_name: ${{ github.ref_name }}
-          release_name: ${{ github.ref_name }}
-          body: |
-            This is a release for ${{ github.ref_name }}. 
-            See the changelog for details.
-          draft: false
-
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: target/release/my-cli
-          asset_name: my-cli-${{ matrix.os }} # Add OS to asset name
-          asset_content_type: application/octet-stream
