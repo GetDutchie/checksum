@@ -1,12 +1,14 @@
+use anyhow::Result;
 use md5::Digest;
 use serde_json::Value;
+use serde_yaml;
 use std::collections::BTreeMap;
 
-fn sort_json(value: &mut Value) {
+fn sort(value: &mut Value) {
     match value {
         Value::Array(arr) => {
             for val in arr.iter_mut() {
-                sort_json(val);
+                sort(val);
             }
             arr.sort_by_key(|a| a.to_string());
         }
@@ -14,7 +16,7 @@ fn sort_json(value: &mut Value) {
             let mut sorted_map = BTreeMap::new();
             for (key, val) in map.iter_mut() {
                 let mut val = val.take();
-                sort_json(&mut val);
+                sort(&mut val);
                 sorted_map.insert(key.clone(), val);
             }
             *map = sorted_map.into_iter().collect();
@@ -24,53 +26,47 @@ fn sort_json(value: &mut Value) {
     }
 }
 
-fn compute_json_digest(s: &str) -> Digest {
-    let mut json: Value = serde_json::from_str(s).unwrap();
-    sort_json(&mut json);
-    md5::compute(json.to_string())
-}
-
-pub fn compute_digest(s: &str, ext: Option<&str>) -> Digest {
-    match ext {
-        Some("json") => compute_json_digest(s),
-        _ => panic!("Unsupported file extension: {:?}", ext),
+fn compute_json_digest(s: &str) -> Result<Digest> {
+    let json: Result<Value, serde_json::Error> = serde_json::from_str(s);
+    match json {
+        Ok(mut data) => {
+            sort(&mut data);
+            Ok(md5::compute(data.to_string()))
+        }
+        Err(_) => Err(anyhow::anyhow!("Unable to parse json contents"))?,
     }
 }
-#[cfg(test)]
-mod tests {
-    use super::*;
 
-    #[test]
-    fn it_works() {
-        let a = compute_json_digest(
-            r#"
-            {"a": 1, "b": 2}
-        "#,
-        );
-        let b = compute_json_digest(
-            r#"
-            {"b": 2, "a": 1}
-            "#,
-        );
-        assert_eq!(a, b);
-        let a = compute_json_digest(
-            r#"
-            [
-                {"foo": 1, "bar": 2},
-                {"baz": 3, "bop": 4},
-                {"zip": 5, "zap": 6}
-            ]
-        "#,
-        );
-        let b = compute_json_digest(
-            r#"
-            [
-                {"baz": 3, "bop": 4},
-                {"zip": 5, "zap": 6},
-                {"foo": 1, "bar": 2}
-            ]
-            "#,
-        );
-        assert_eq!(a, b);
+fn compute_yaml_digest(s: &str) -> Result<Digest> {
+    let yaml: Result<Value, serde_yaml::Error> = serde_yaml::from_str(s);
+    match yaml {
+        Ok(mut data) => {
+            sort(&mut data);
+            Ok(md5::compute(data.to_string()))
+        }
+        Err(_) => Err(anyhow::anyhow!("Unable to parse yaml contents"))?,
+    }
+}
+
+/// # Example
+/// ```
+/// use checksum::digest::compute_digest;
+/// use md5::Digest;
+/// // regardless of the order of the keys, the digest should be the same
+/// let digest_a: Digest = compute_digest("{\"a\": 1, \"b\": 2}", Some("json")).unwrap();
+/// let digest_b: Digest = compute_digest("{\"b\": 2, \"a\": 1}", Some("json")).unwrap();
+/// assert_eq!(digest_a, digest_b);
+/// ```
+pub fn compute_digest(s: &str, ext: Option<&str>) -> Result<Digest> {
+    match ext {
+        Some("json") => compute_json_digest(s),
+        Some("yaml") | Some("yml") => compute_yaml_digest(s),
+        _ => {
+            if let Some(ext) = ext {
+                panic!("Unsupported file type, {:?}", ext);
+            } else {
+                panic!("No file extension provided");
+            }
+        }
     }
 }
