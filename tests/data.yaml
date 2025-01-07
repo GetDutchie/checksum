@@ -1,0 +1,27 @@
+---
+up:
+  - uv venv && uv sync && echo "$(pwd)/.venv/bin" >> .bolt/.path
+  - echo "KUBECONFIG=$(pwd)/configs/kubeconfig" >> .bolt/.env
+
+cmds:
+  ci:
+    desc: Bolt steps to run in CI
+    steps:
+      - cmd: verify
+      - cmd: lint
+
+  lint:
+    desc: Lint all Python scripts
+    steps:
+      - cmd: lint.yaml
+      - cmd: lint.python
+    cmds:
+      yaml:
+        steps:
+          - cmd: format.yaml
+            vars: { lint: true }
+      python:
+        steps:
+          - uv run ruff check scripts/
+          - cmd: format.python
+            vars: { lint: true }
